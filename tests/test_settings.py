@@ -3,15 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from speedmeter.settings import Settings
-
-
-@pytest.fixture(autouse=True)
-def _isolate_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Тесты не должны зависеть от .env разработчика и его окружения."""
-    monkeypatch.setitem(Settings.model_config, "env_file", None)
-    for name in ("SPEEDMETER_COUNT", "SPEEDMETER_TIMEOUT", "SPEEDMETER_CONTACT_URL"):
-        monkeypatch.delenv(name, raising=False)
+from speedmeter.settings import APP_NAME, APP_VERSION, Settings
 
 
 def test_defaults() -> None:
@@ -20,7 +12,7 @@ def test_defaults() -> None:
     assert settings.count == 10
     assert settings.timeout == 30.0
     assert settings.contact_url is None
-    assert settings.user_agent == "speedmeter/0.1"
+    assert settings.user_agent == f"{APP_NAME}/{APP_VERSION}"
 
 
 def test_values_come_from_environment(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -32,7 +24,7 @@ def test_values_come_from_environment(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert settings.count == 3
     assert settings.timeout == 5.0
-    assert settings.user_agent == "speedmeter/0.1 (https://example.com/me)"
+    assert settings.user_agent == f"{APP_NAME}/{APP_VERSION} (https://example.com/me)"
 
 
 @pytest.mark.parametrize(

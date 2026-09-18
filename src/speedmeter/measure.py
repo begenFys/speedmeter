@@ -78,7 +78,8 @@ def fetch_once(client: httpx.Client, url: str, clock: Clock = time.perf_counter)
     try:
         response = client.get(url)
     except httpx.HTTPError as exc:
-        raise MeasurementError(f"Ошибка запроса к {url}: {exc}") from exc
+        reason = f"{type(exc).__name__}: {exc}" if str(exc) else type(exc).__name__
+        raise MeasurementError(f"Не удалось выполнить запрос к {url} ({reason})") from exc
     elapsed = clock() - start
 
     if response.is_error:

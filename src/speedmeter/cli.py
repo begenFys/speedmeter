@@ -65,7 +65,10 @@ def build_parser(settings: Settings) -> argparse.ArgumentParser:
         "--timeout",
         type=positive_float,
         default=settings.timeout,
-        help="таймаут одного запроса в секундах (по умолчанию %(default)s)",
+        help=(
+            "таймаут сетевой операции (соединение, ожидание данных) в секундах"
+            " (по умолчанию %(default)s)"
+        ),
     )
     return parser
 
