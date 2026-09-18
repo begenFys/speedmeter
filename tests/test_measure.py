@@ -6,7 +6,6 @@ import httpx
 import pytest
 
 from speedmeter.measure import (
-    DEFAULT_HEADERS,
     MeasurementError,
     Sample,
     fetch_once,
@@ -15,6 +14,7 @@ from speedmeter.measure import (
 )
 
 URL = "https://example.com/image.jpg"
+USER_AGENT = "test-agent/1.0"
 Handler = Callable[[httpx.Request], httpx.Response]
 
 
@@ -34,7 +34,8 @@ def client_for() -> Iterator[Callable[[Handler], httpx.Client]]:
     clients: list[httpx.Client] = []
 
     def factory(handler: Handler) -> httpx.Client:
-        client = make_client(timeout=1.0, transport=httpx.MockTransport(handler))
+        transport = httpx.MockTransport(handler)
+        client = make_client(timeout=1.0, user_agent=USER_AGENT, transport=transport)
         clients.append(client)
         return client
 
@@ -66,7 +67,7 @@ def test_fetch_once_sends_no_cache_and_identity_headers(
 
     assert seen[0]["Cache-Control"] == "no-cache"
     assert seen[0]["Accept-Encoding"] == "identity"
-    assert seen[0]["User-Agent"] == DEFAULT_HEADERS["User-Agent"]
+    assert seen[0]["User-Agent"] == USER_AGENT
 
 
 @pytest.mark.parametrize("status", [404, 500])

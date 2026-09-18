@@ -9,11 +9,8 @@ import httpx
 # Порог, ниже которого ответ считается слишком маленьким для надёжного замера.
 SMALL_RESPONSE_BYTES = 1_000_000
 
-# Некоторые хосты (например, Wikimedia) требуют в User-Agent ссылку на автора, иначе 403.
-USER_AGENT_CONTACT_URL = "https://github.com/begenFys/speedmeter-ad-robot"
-
+# User-Agent сюда не входит: он приходит из настроек в make_client.
 DEFAULT_HEADERS = {
-    "User-Agent": f"speedmeter/0.1 ({USER_AGENT_CONTACT_URL})",
     # Просим промежуточные прокси и CDN не отдавать закэшированную копию.
     "Cache-Control": "no-cache",
     # Отключаем сжатие, чтобы считать байты, реально прошедшие по сети.
@@ -63,10 +60,12 @@ class Stats:
         return self.bytes_per_second * 8 / 1_000_000
 
 
-def make_client(timeout: float, transport: httpx.BaseTransport | None = None) -> httpx.Client:
+def make_client(
+    timeout: float, user_agent: str, transport: httpx.BaseTransport | None = None
+) -> httpx.Client:
     """Создаёт HTTP-клиент с нужными заголовками. Соединение переиспользуется между запросами."""
     return httpx.Client(
-        headers=DEFAULT_HEADERS,
+        headers={**DEFAULT_HEADERS, "User-Agent": user_agent},
         timeout=timeout,
         follow_redirects=True,
         transport=transport,
