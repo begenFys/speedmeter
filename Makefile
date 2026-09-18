@@ -7,6 +7,7 @@ help: ## Показать список команд
 
 install: ## Установить зависимости и pre-commit хуки
 	uv sync
+	test -f .env || cp .env.example .env
 	uv run pre-commit install
 
 lint: ## Проверить код ruff (без изменений)

@@ -19,3 +19,6 @@ htmlcov/
 # IDE
 .idea/
 .vscode/
+
+# Локальные настройки
+.env
