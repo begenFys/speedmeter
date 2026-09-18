@@ -44,6 +44,8 @@ select = [
     "PT",       # pytest style
     "RUF",      # ruff-specific
 ]
+# Комментарии и docstrings на русском: отключаем проверку на "похожие на латиницу" символы.
+ignore = ["RUF001", "RUF002", "RUF003"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -54,4 +56,4 @@ pretty = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q --strict-markers"
+addopts = "--strict-markers"
