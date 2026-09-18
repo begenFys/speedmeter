@@ -75,7 +75,9 @@ def format_megabytes(num_bytes: float) -> str:
 
 
 def format_sample(index: int, count: int, sample: Sample) -> str:
-    return f"  {index}/{count}  {sample.seconds:.3f} с  {format_megabytes(sample.num_bytes)}"
+    index_width = len(str(count))
+    size = format_megabytes(sample.num_bytes)
+    return f"  {index:>{index_width}}/{count}  {sample.seconds:.3f} с  {size}"
 
 
 def format_stats(stats: Stats) -> str:

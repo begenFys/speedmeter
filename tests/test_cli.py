@@ -7,7 +7,7 @@ import httpx
 import pytest
 
 from speedmeter import cli
-from speedmeter.measure import Stats
+from speedmeter.measure import Sample, Stats
 from speedmeter.settings import Settings
 
 URL = "https://example.com/image.jpg"
@@ -115,12 +115,25 @@ def test_run_prints_progress_and_summary(mock_network: Callable[[Handler], None]
     assert code == 0
     assert err == ""
     assert f"Замер: {URL}, запросов: 3" in out
-    assert "  1/3  " in out
-    assert "  3/3  " in out
+    tokens = out.split()
+    assert "1/3" in tokens
+    assert "3/3" in tokens
     rows = parse_rows(out)
     assert rows["Запросов"] == "3"
     assert rows["Скачано"] == "6.00 МБ"
     assert rows["Скорость"].endswith("Мбит/с)")
+
+
+def test_format_sample_aligns_index_to_count_width() -> None:
+    sample = Sample(seconds=1.5, num_bytes=2_000_000)
+
+    first = cli.format_sample(1, 10, sample)
+    last = cli.format_sample(10, 10, sample)
+
+    assert first.split() == ["1/10", "1.500", "с", "2.00", "МБ"]
+    assert last.split() == ["10/10", "1.500", "с", "2.00", "МБ"]
+    # Номера выровнены по правому краю: «/» стоит в одной и той же позиции.
+    assert first.index("/") == last.index("/")
 
 
 def test_run_reports_http_error_and_exits_with_1(
