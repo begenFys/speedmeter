@@ -1,23 +1,30 @@
 # speedmeter
 
-[![CI](https://github.com/begenFys/speedmeter-ad-robot/actions/workflows/ci.yml/badge.svg)](https://github.com/begenFys/speedmeter-ad-robot/actions/workflows/ci.yml)
+[![CI](https://github.com/begenFys/speedmeter/actions/workflows/ci.yml/badge.svg)](https://github.com/begenFys/speedmeter/actions/workflows/ci.yml)
 
-CLI-утилита для замера скорости скачивания с вашего компьютера. Принимает адрес тяжёлого файла (например, картинки), делает к нему несколько последовательных запросов, дожидается каждого ответа целиком и печатает среднее время запроса, объём скачанных данных и скорость.
+English | [Русский](README.ru.md)
 
-## Быстрый старт
+A command-line tool that measures download speed from your machine. Give it
+the URL of a large file, such as an image; it makes several sequential
+requests, waits for each response body in full and prints the average
+request time, the amount downloaded and the speed.
 
-Нужны [uv](https://docs.astral.sh/uv/) и Python 3.12+ (uv поставит его сам, если нет).
+## Quick start
+
+Requires [uv](https://docs.astral.sh/uv/) and Python 3.12+ (uv installs
+Python if it is missing).
 
 ```bash
-git clone https://github.com/begenFys/speedmeter-ad-robot.git
-cd speedmeter-ad-robot
+git clone https://github.com/begenFys/speedmeter.git
+cd speedmeter
 make install
 make run URL=https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg
 ```
 
-`make install` ставит зависимости, копирует `.env.example` в `.env` и подключает pre-commit хуки.
+`make install` installs the dependencies, copies `.env.example` to `.env` and
+sets up the pre-commit hooks.
 
-Без make:
+Without make:
 
 ```bash
 uv sync
@@ -25,9 +32,11 @@ cp .env.example .env
 uv run speedmeter https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg
 ```
 
-Также работает `uv run python -m speedmeter <url>`.
+`uv run python -m speedmeter <url>` works too.
 
-## Пример вывода
+## Example output
+
+The tool's messages are in Russian. A run of ten requests:
 
 ```
 $ uv run speedmeter https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg
@@ -49,66 +58,82 @@ $ uv run speedmeter https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalps
 Скорость:       6.73 МБ/с (53.9 Мбит/с)
 ```
 
-Первый запрос заметно дольше остальных: в него входят TCP/TLS handshake и прогрев кэша CDN. Поэтому кроме среднего показаны min и max.
+The summary reads: requests, downloaded, average time, speed. The first
+request is noticeably slower: it includes the TCP/TLS handshake and warming
+up the CDN cache, which is why min and max are shown next to the average.
 
-## Параметры
+## Options
 
-Флаги командной строки:
-
-| Флаг | Значение по умолчанию | Описание |
+| Flag | Default | Meaning |
 |---|---|---|
-| `url` | обязателен | http(s)-адрес тяжёлого файла |
-| `-n`, `--count` | 10 | число последовательных запросов |
-| `-t`, `--timeout` | 30 | таймаут сетевой операции, секунды |
+| `url` | required | http(s) URL of a large file |
+| `-n`, `--count` | 10 | number of sequential requests |
+| `-t`, `--timeout` | 30 | timeout of a single network operation, seconds |
 
-Значения по умолчанию можно задать через переменные окружения или файл `.env` в директории запуска. Флаги имеют приоритет над окружением.
+Defaults can be set with environment variables or a `.env` file in the
+working directory. Flags take precedence over the environment.
 
-| Переменная | Описание |
+| Variable | Meaning |
 |---|---|
-| `SPEEDMETER_COUNT` | число запросов по умолчанию |
-| `SPEEDMETER_TIMEOUT` | таймаут по умолчанию, секунды |
-| `SPEEDMETER_CONTACT_URL` | ссылка на автора, добавляется в `User-Agent` |
+| `SPEEDMETER_COUNT` | default number of requests |
+| `SPEEDMETER_TIMEOUT` | default timeout, seconds |
+| `SPEEDMETER_CONTACT_URL` | contact link added to the `User-Agent` |
 
-`SPEEDMETER_CONTACT_URL` нужен для хостов вроде Wikimedia: по их политике запросы без контактной ссылки в `User-Agent` получают 403. Готовое значение уже есть в `.env.example`.
+`SPEEDMETER_CONTACT_URL` is needed for hosts such as Wikimedia, whose policy
+answers requests without a contact link in the `User-Agent` with 403. A
+ready value is in `.env.example`.
 
-Коды возврата: 0 при успехе, 1 при ошибке замера (таймаут, сетевая ошибка, ответ не 2xx), 2 при невалидных аргументах или настройках.
+Exit codes: 0 on success, 1 if the measurement fails (timeout, network
+error, non-2xx response), 2 on invalid arguments or settings.
 
-## Как считается
+## How it is measured
 
-- **Скорость** это сумма скачанных байт, делённая на сумму времени всех запросов, а не среднее из десяти отдельных скоростей. Так медленные запросы учитываются с правильным весом.
-- **Единицы.** Печатаются и мегабайты в секунду (МБ/с), и мегабиты (Мбит/с), как в speedtest.net. Множители десятичные: 1 МБ = 1 000 000 байт, 1 Мбит = 1 000 000 бит.
-- **Время** измеряется от отправки запроса до получения тела целиком через `time.perf_counter()`.
-- **Байты** считаются по тому, что реально пришло из сокета (`num_bytes_downloaded` в httpx), а не по заголовку `Content-Length`.
-- **Кэш.** Отправляется `Cache-Control: no-cache`, чтобы промежуточные прокси и CDN не отдавали закэшированную копию. Сам клиент ничего не кэширует.
-- **Сжатие** отключено заголовком `Accept-Encoding: identity`, чтобы объём на проводе совпадал с объёмом файла.
-- **Соединение** переиспользуется между запросами (keep-alive), поэтому handshake входит только в первый запрос. Это осознанный выбор: так замер ближе к «скорости канала», а не к «стоимости одного холодного запроса».
-- **Таймаут** действует на каждую сетевую операцию отдельно: установку соединения и ожидание очередной порции данных. Это поведение httpx. Большой файл на медленном канале не прервётся, пока данные продолжают приходить.
-- **Ошибки.** Замер прерывается на первом неудачном запросе. Ретраев нет, они исказили бы результат.
-- **Маленькие файлы.** Если средний размер ответа меньше 1 МБ, выводится предупреждение: на таких объёмах результат сильно зашумлён.
+- **Speed** is total bytes divided by the total time of all requests, not
+  the mean of per-request speeds, so slow requests get their proper weight.
+- **Units.** Both megabytes per second and megabits per second are printed,
+  as speedtest.net does. Multipliers are decimal: 1 MB = 1,000,000 bytes,
+  1 Mbit = 1,000,000 bits.
+- **Time** runs from sending the request to receiving the whole body,
+  measured with `time.perf_counter()`.
+- **Bytes** are what actually came from the socket (`num_bytes_downloaded`
+  in httpx), not the `Content-Length` header.
+- **Caching.** `Cache-Control: no-cache` is sent so proxies and CDNs do not
+  serve a cached copy. The client itself caches nothing.
+- **Compression** is disabled with `Accept-Encoding: identity`, so the bytes
+  on the wire match the file size.
+- **Connection** is reused between requests (keep-alive), so only the first
+  request pays for the handshake. This is deliberate: the result is closer
+  to the bandwidth of the link than to the cost of one cold request.
+- **Timeout** applies to each network operation separately: connecting and
+  waiting for the next chunk of data, as httpx does. A large file on a slow
+  link is not cut off while data keeps arriving.
+- **Errors.** The run stops at the first failed request. There are no
+  retries; they would distort the result.
+- **Small files.** If the average response is under 1 MB, a warning is
+  printed: results on such sizes are noisy.
 
-## Разработка
+## Development
 
 ```bash
-make            # список команд
+make            # list of commands
 make check      # ruff, mypy, pytest
-make test       # только тесты, подробный вывод
-make format     # автоформатирование
+make test       # tests only, verbose
+make format     # autoformat
 ```
 
-Те же проверки запускает pre-commit при коммите и GitHub Actions на Python 3.12 и 3.14.
-
-Структура:
+The same checks run in pre-commit on commit and in GitHub Actions on Python
+3.12 and 3.14.
 
 ```
 src/speedmeter/
-  cli.py        разбор аргументов, вывод, коды возврата
-  measure.py    HTTP-запросы и расчёт статистики
-  settings.py   настройки из окружения
+  cli.py        argument parsing, output, exit codes
+  measure.py    HTTP requests and statistics
+  settings.py   settings from the environment
 tests/
-  test_cli.py       CLI: аргументы, вывод, коды возврата
-  test_measure.py   HTTP-часть через httpx.MockTransport и подменённые часы
-  test_stats.py     расчёт статистики
-  test_settings.py  настройки
+  test_cli.py       CLI: arguments, output, exit codes
+  test_measure.py   HTTP part via httpx.MockTransport and a fake clock
+  test_stats.py     statistics
+  test_settings.py  settings
 ```
 
-Сеть в тестах не используется.
+The tests do not use the network.

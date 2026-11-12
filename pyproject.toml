@@ -1,7 +1,7 @@
 [project]
-name = "speedmeter-ad-robot"
+name = "speedmeter"
 version = "0.1.0"
-description = "CLI-утилита для замера скорости скачивания: несколько последовательных запросов к URL"
+description = "CLI that measures download speed with several sequential requests to a URL"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
