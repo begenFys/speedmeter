@@ -6,7 +6,7 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 APP_NAME = "speedmeter"
-APP_VERSION = version("speedmeter-ad-robot")
+APP_VERSION = version("speedmeter")
 
 
 class Settings(BaseSettings):
